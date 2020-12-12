@@ -120,44 +120,54 @@ public class LogMinerStreamingChangeEventSource implements StreamingChangeEventS
     public void execute(ChangeEventSourceContext context) {
         try {
             // Perform registration
+            LOGGER.error("tuonghv Mining execute");
             registerTransactionalBuffer();
             registerLogMinerMetrics();
 
+            LOGGER.error("tuonghv Mining try");
             try (Connection connection = jdbcConnection.connection(false)) {
+
+                LOGGER.info("tuonghvMining try");
                 long databaseTimeMs = getTimeDifference(connection).toMillis();
 
                 LOGGER.trace("Current milliseconds {}, database time {}", System.currentTimeMillis(), databaseTimeMs);
                 transactionalBufferMetrics.setTimeDifference(new AtomicLong(databaseTimeMs));
 
                 startScn = offsetContext.getScn();
+                LOGGER.info("tuonghv startScn "+ startScn);
                 createFlushTable(connection);
 
                 if (!isContinuousMining && startScn < getFirstOnlineLogScn(connection)) {
                     LOGGER.error("Online REDO LOG files do not contain the offset scn {}", startScn);
                     throw new DebeziumException("Online REDO LOG files do not contain the offset scn.  Please perform a new snapshot.");
                 }
-
+                LOGGER.info("tuonghv setNlsSessionParameters ");    
                 setNlsSessionParameters(jdbcConnection);
                 checkSupplementalLogging(jdbcConnection, connectorConfig.getPdbName());
 
                 initializeRedoLogsForMining(connection, false);
-
+                LOGGER.info("tuonghv getLogMiningHistoryRecorder ");    
                 HistoryRecorder historyRecorder = connectorConfig.getLogMiningHistoryRecorder();
+                LOGGER.info("tuonghv end getLogMiningHistoryRecorder ");  
                 try {
                     // todo: why can't OracleConnection be used rather than a Factory+JdbcConfiguration?
+                     LOGGER.info("tuonghv prepare logMinerMetrics "); 
                     historyRecorder.prepare(logMinerMetrics, jdbcConfiguration, connectorConfig.getLogMinerHistoryRetentionHours());
-
+                    LOGGER.error("tuonghv done prepare logMinerMetrics "); 
                     final LogMinerQueryResultProcessor processor = new LogMinerQueryResultProcessor(context, logMinerMetrics,
                             transactionalBuffer, dmlParser, offsetContext, schema, dispatcher, transactionalBufferMetrics,
                             catalogName, clock, historyRecorder);
 
+                     LOGGER.info("tuonghv miningView "); 
                     try (PreparedStatement miningView = connection
                             .prepareStatement(SqlUtils.logMinerContentsQuery(connectorConfig.getSchemaName(), jdbcConnection.username(), schema))) {
                         Set<String> currentRedoLogFiles = getCurrentRedoLogFiles(connection, logMinerMetrics);
-
+                        LOGGER.info("tuonghv Stopwatch ");
                         Stopwatch stopwatch = Stopwatch.reusable();
                         while (context.isRunning()) {
+                            LOGGER.info("tuonghv isRunning ");
                             endScn = getEndScn(connection, startScn, logMinerMetrics);
+                            LOGGER.info("tuonghv endScn "+ endScn);
                             flushLogWriter(connection, jdbcConfiguration, isRac, racHosts);
 
                             pauseBetweenMiningSessions();
@@ -177,17 +187,26 @@ public class LogMinerStreamingChangeEventSource implements StreamingChangeEventS
                                 currentRedoLogFiles = getCurrentRedoLogFiles(connection, logMinerMetrics);
                             }
 
+                             LOGGER.info("tuonghv startLogMining startScn:"+ startScn+ "endScn:" + endScn + "strategy:" + strategy + "isContinuousMining:"+ isContinuousMining);
                             startLogMining(connection, startScn, endScn, strategy, isContinuousMining);
-
+                            LOGGER.info("tuonghv end startLogMining startScn");    
                             stopwatch.start();
+
+                            LOGGER.info("tuonghv LOG_MINING_VIEW_FETCH_SIZE: "+ LOG_MINING_VIEW_FETCH_SIZE); 
                             miningView.setFetchSize(LOG_MINING_VIEW_FETCH_SIZE);
+                            miningView.setFetchSize(1);
                             miningView.setLong(1, startScn);
                             miningView.setLong(2, endScn);
+
+                            LOGGER.info("tuonghv start executeQuery minning:"); 
                             try (ResultSet rs = miningView.executeQuery()) {
+                                LOGGER.info("tuonghv executeQuery minning:"); 
+
                                 Duration lastDurationOfBatchCapturing = stopwatch.stop().durations().statistics().getTotal();
                                 logMinerMetrics.setLastDurationOfBatchCapturing(lastDurationOfBatchCapturing);
                                 processor.processResult(rs);
 
+                                LOGGER.info("tuonghv updateStartScn"); 
                                 updateStartScn();
 
                                 if (transactionalBuffer.isEmpty()) {

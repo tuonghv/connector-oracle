@@ -5,6 +5,9 @@
  */
 package io.debezium.connector.oracle;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.debezium.config.Configuration;
 import io.debezium.connector.oracle.logminer.LogMinerStreamingChangeEventSource;
 import io.debezium.connector.oracle.xstream.XstreamStreamingChangeEventSource;
@@ -28,6 +31,7 @@ public class OracleChangeEventSourceFactory implements ChangeEventSourceFactory 
     private final OracleDatabaseSchema schema;
     private final Configuration config;
     private final OracleTaskContext taskContext;
+    private static final Logger LOGGER = LoggerFactory.getLogger(OracleChangeEventSourceFactory.class);
 
     public OracleChangeEventSourceFactory(OracleConnectorConfig configuration, OracleConnection jdbcConnection,
                                           ErrorHandler errorHandler, EventDispatcher<TableId> dispatcher, Clock clock, OracleDatabaseSchema schema,
@@ -40,10 +44,13 @@ public class OracleChangeEventSourceFactory implements ChangeEventSourceFactory 
         this.schema = schema;
         this.config = config;
         this.taskContext = taskContext;
+
+        LOGGER.info("tuonghv OracleChangeEventSourceFactory init ");
     }
 
     @Override
     public SnapshotChangeEventSource getSnapshotChangeEventSource(OffsetContext offsetContext, SnapshotProgressListener snapshotProgressListener) {
+        LOGGER.info("tuonghv getSnapshotChangeEventSource init 53 ");
         return new OracleSnapshotChangeEventSource(configuration, (OracleOffsetContext) offsetContext, jdbcConnection,
                 schema, dispatcher, clock, snapshotProgressListener);
     }
@@ -51,7 +58,10 @@ public class OracleChangeEventSourceFactory implements ChangeEventSourceFactory 
     @Override
     public StreamingChangeEventSource getStreamingChangeEventSource(OffsetContext offsetContext) {
         OracleConnectorConfig.ConnectorAdapter adapter = configuration.getAdapter();
+        
+        LOGGER.info("tuonghv getStreamingChangeEventSource init ");
         if (adapter == OracleConnectorConfig.ConnectorAdapter.XSTREAM) {
+            LOGGER.info("tuonghv XstreamStreamingChangeEventSource XSTREAM init ");
             return new XstreamStreamingChangeEventSource(
                     configuration,
                     (OracleOffsetContext) offsetContext,
@@ -61,6 +71,8 @@ public class OracleChangeEventSourceFactory implements ChangeEventSourceFactory 
                     clock,
                     schema);
         }
+
+        LOGGER.info("tuonghv LogMinerStreamingChangeEventSource  init ");
         return new LogMinerStreamingChangeEventSource(
                 configuration,
                 (OracleOffsetContext) offsetContext,

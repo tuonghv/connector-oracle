@@ -47,6 +47,7 @@ public class OracleConnectorTask extends BaseSourceTask {
 
     @Override
     public ChangeEventSourceCoordinator start(Configuration config) {
+        LOGGER.info("tuonghv ChangeEventSourceCoordinator ");
         OracleConnectorConfig connectorConfig = new OracleConnectorConfig(config);
         TopicSelector<TableId> topicSelector = OracleTopicSelector.defaultSelector(connectorConfig);
         SchemaNameAdjuster schemaNameAdjuster = SchemaNameAdjuster.create(LOGGER);
@@ -64,6 +65,7 @@ public class OracleConnectorTask extends BaseSourceTask {
             schema.recover(previousOffset);
         }
 
+        LOGGER.info("tuonghv OracleTaskContext ");
         taskContext = new OracleTaskContext(connectorConfig, schema);
 
         Clock clock = Clock.system();
@@ -80,6 +82,7 @@ public class OracleConnectorTask extends BaseSourceTask {
 
         final OracleEventMetadataProvider metadataProvider = new OracleEventMetadataProvider();
 
+        LOGGER.info("tuonghv EventDispatcher ");
         EventDispatcher<TableId> dispatcher = new EventDispatcher<>(
                 connectorConfig,
                 topicSelector,
@@ -90,6 +93,7 @@ public class OracleConnectorTask extends BaseSourceTask {
                 metadataProvider,
                 schemaNameAdjuster);
 
+        LOGGER.info("tuonghv ChangeEventSourceCoordinator ");
         ChangeEventSourceCoordinator coordinator = new ChangeEventSourceCoordinator(
                 previousOffset,
                 errorHandler,
@@ -100,6 +104,7 @@ public class OracleConnectorTask extends BaseSourceTask {
                 dispatcher,
                 schema);
 
+        LOGGER.info("tuonghv start coordinator");
         coordinator.start(taskContext, this.queue, metadataProvider);
 
         return coordinator;

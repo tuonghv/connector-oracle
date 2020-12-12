@@ -81,8 +81,11 @@ class LogMinerQueryResultProcessor {
         int rollbackCounter = 0;
         Instant startTime = Instant.now();
         while (true) {
+
+            LOGGER.info("tuonghv processResult"); 
             try {
                 if (!resultSet.next()) {
+                     LOGGER.info("break"); 
                     break;
                 }
             }
@@ -91,6 +94,7 @@ class LogMinerQueryResultProcessor {
                 return 0;
             }
 
+            LOGGER.info("tuonghv RowMapper.getScn"); 
             BigDecimal scn = RowMapper.getScn(transactionalBufferMetrics, resultSet);
             String tableName = RowMapper.getTableName(transactionalBufferMetrics, resultSet);
             String segOwner = RowMapper.getSegOwner(transactionalBufferMetrics, resultSet);
@@ -100,23 +104,32 @@ class LogMinerQueryResultProcessor {
             String operation = RowMapper.getOperation(transactionalBufferMetrics, resultSet);
             String userName = RowMapper.getUsername(transactionalBufferMetrics, resultSet);
             boolean isDml = false;
+
+            LOGGER.info("tuonghv check operationCode"); 
             if (operationCode == RowMapper.INSERT || operationCode == RowMapper.UPDATE || operationCode == RowMapper.DELETE) {
                 isDml = true;
             }
+
+            LOGGER.info("tuonghv RowMapper.getSqlRedo"); 
+
             String redoSql = RowMapper.getSqlRedo(transactionalBufferMetrics, resultSet, isDml, historyRecorder, scn, tableName, segOwner, operationCode, changeTime,
                     txId);
+
+
 
             LOGGER.trace("scn={}, operationCode={}, operation={}, table={}, segOwner={}, userName={}", scn, operationCode, operation, tableName, segOwner, userName);
 
             String logMessage = String.format("transactionId=%s, SCN=%s, table_name=%s, segOwner=%s, operationCode=%s, offsetSCN=%s, " +
                     " commitOffsetSCN=%s", txId, scn, tableName, segOwner, operationCode, offsetContext.getScn(), offsetContext.getCommitScn());
 
+            LOGGER.info("tuonghv logMessage " + logMessage); 
             if (scn == null) {
                 LogMinerHelper.logWarn(transactionalBufferMetrics, "Scn is null for {}", logMessage);
                 return 0;
             }
 
             // Commit
+            LOGGER.info("tuonghv RowMapper.COMMIT "); 
             if (operationCode == RowMapper.COMMIT) {
                 if (transactionalBuffer.isTransactionRegistered(txId)) {
                     historyRecorder.record(scn, tableName, segOwner, operationCode, changeTime, txId, 0, redoSql);
@@ -156,8 +169,10 @@ class LogMinerQueryResultProcessor {
             }
 
             // DML
+             LOGGER.info("tuonghv DML  INSERT"); 
             if (operationCode == RowMapper.INSERT || operationCode == RowMapper.DELETE || operationCode == RowMapper.UPDATE) {
                 LOGGER.trace("DML,  {}, sql {}", logMessage, redoSql);
+                LOGGER.info("tuonghv DML "+ redoSql + "\n redoSql" + redoSql); 
                 dmlCounter++;
                 LogMinerDmlEntry dmlEntry = dmlParser.parse(redoSql, schema.getTables(), txId);
 

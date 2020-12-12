@@ -1,0 +1,14 @@
+mvn install:install-file \
+  -DgroupId=com.oracle.instantclient \
+  -DartifactId=xstreams \
+  -Dversion=12.2.0.1 \
+  -Dpackaging=jar \
+  -Dfile=xstreams.jar
+
+cd /home/debezium/debezium-incubator-master_moinhat/debezium-incubator-master/debezium-connector-oracle
+
+mvn clean package
+
+
+
+COPY debezium-connector-oracle-1.0.68.jar /kafka/connect/debezium-connector-oracle/
