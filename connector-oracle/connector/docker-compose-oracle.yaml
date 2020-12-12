@@ -1,0 +1,39 @@
+version: '2'
+services:
+  zookeeper:
+    image: debezium/zookeeper:1.3
+    ports:
+     - 2181:2181
+     - 2888:2888
+     - 3888:3888
+  kafka:
+    image: debezium/kafka:1.3
+    ports:
+     - 9092:9092
+    links:
+     - zookeeper
+    environment:
+     - ZOOKEEPER_CONNECT=zookeeper:2181
+  connect:
+    image: debezium/connect-with-oracle-jdbc_tuonghv:1.3
+    build:
+      context: debezium-with-oracle-jdbc
+      args:
+        DEBEZIUM_VERSION: 1.3
+    ports:
+     - 8083:8083
+     - 5005:5005
+    links:
+     - kafka
+    volumes:
+     - ./debezium-connector-oracle-1.0.68.jar:/kafka/connect/debezium-connector-oracle/debezium-connector-oracle-1.0.68.jar
+    environment:
+     - BOOTSTRAP_SERVERS=kafka:9092
+     - GROUP_ID=1
+     - CONFIG_STORAGE_TOPIC=my_connect_configs
+     - OFFSET_STORAGE_TOPIC=my_connect_offsets
+     - STATUS_STORAGE_TOPIC=my_connect_statuses
+     - LD_LIBRARY_PATH=/instant_client
+     - KAFKA_DEBUG=true
+     - DEBUG_SUSPEND_FLAG=n
+     - JAVA_DEBUG_PORT=0.0.0.0:5005

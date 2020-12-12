@@ -1,0 +1,4 @@
+cd /home/debezium/connector
+docker-compose -f docker-compose-oracle.yaml up --build
+docker-compose -f docker-compose-oracle.yaml up -d 
+docker-compose -f docker-compose-oracle.yaml down
