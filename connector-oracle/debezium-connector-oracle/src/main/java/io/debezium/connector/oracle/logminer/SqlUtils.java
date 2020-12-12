@@ -164,7 +164,7 @@ public class SqlUtils {
             miningStrategy = "DBMS_LOGMNR.DICT_FROM_REDO_LOGS + DBMS_LOGMNR.DDL_DICT_TRACKING ";
         }
         else {
-            miningStrategy = "DBMS_LOGMNR.DICT_FROM_ONLINE_CATALOG ";
+            miningStrategy = "SYS.DBMS_LOGMNR.SKIP_CORRUPTION + SYS.DBMS_LOGMNR.COMMITTED_DATA_ONLY + DBMS_LOGMNR.DICT_FROM_ONLINE_CATALOG ";
         }
         if (isContinuousMining) {
             miningStrategy += " + DBMS_LOGMNR.CONTINUOUS_MINE ";
@@ -199,14 +199,14 @@ public class SqlUtils {
         String sorting = "ORDER BY SCN";
         // todo: add ROW_ID, SESSION#, SERIAL#, RS_ID, and SSN
         return "SELECT SCN, SQL_REDO, OPERATION_CODE, TIMESTAMP, XID, CSF, TABLE_NAME, SEG_OWNER, OPERATION, USERNAME " +
-                " FROM " + LOGMNR_CONTENTS_VIEW + " WHERE  OPERATION_CODE in (1,2,3,5) " + // 5 - DDL
+                " FROM " + LOGMNR_CONTENTS_VIEW + " WHERE  OPERATION_CODE in (1,2,3) " + // 5 - DDL
                 " AND SEG_OWNER = '" + schemaName.toUpperCase() + "' " +
-                buildTableInPredicate(whiteListTableNames) +
+                buildTableInPredicate(whiteListTableNames).toUpperCase() +
                 " AND SCN >= ? AND SCN < ? " +
                 // Capture DDL and MISSING_SCN rows only hwne not performed by SYS, SYSTEM, and LogMiner user
-                " OR (OPERATION_CODE IN (5,34) AND USERNAME NOT IN ('SYS','SYSTEM','" + logMinerUser.toUpperCase() + "')) " +
+               // " OR (OPERATION_CODE IN (5,34) AND USERNAME NOT IN ('SYS','SYSTEM','" + logMinerUser.toUpperCase() + "')) " +
                 // Capture all COMMIT and ROLLBACK operations performed by the database
-                " OR (OPERATION_CODE IN (7,36)) " +
+               // " OR (OPERATION_CODE IN (7,36)) " +
                 sorting; // todo username = schemaName?
     }
 

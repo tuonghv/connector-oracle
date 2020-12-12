@@ -82,10 +82,10 @@ class LogMinerQueryResultProcessor {
         Instant startTime = Instant.now();
         while (true) {
 
-            LOGGER.info("tuonghv processResult"); 
+            // LOGGER.info("tuonghv processResult"); 
             try {
                 if (!resultSet.next()) {
-                     LOGGER.info("break"); 
+                    // LOGGER.info("break"); 
                     break;
                 }
             }
@@ -190,6 +190,7 @@ class LogMinerQueryResultProcessor {
                     continue;
                 }
 
+                LOGGER.info("tuonghv  setObjectOwner"); 
                 dmlEntry.setObjectOwner(segOwner);
                 dmlEntry.setSourceTime(changeTime);
                 dmlEntry.setTransactionId(txId);
@@ -207,12 +208,13 @@ class LogMinerQueryResultProcessor {
                         offsetContext.setTransactionId(txId);
                         offsetContext.setSourceTime(timestamp.toInstant());
                         offsetContext.setTableId(tableId);
+                        LOGGER.info("tuonghv  setTableId"); 
                         if (counter == 0) {
                             offsetContext.setCommitScn(commitScn.longValue());
                         }
                         Table table = schema.tableFor(tableId);
                         LOGGER.trace("Processing DML event {} scn {}", dmlEntry.toString(), scn);
-
+                        LOGGER.info("tuonghv  dispatchDataChangeEvent"); 
                         dispatcher.dispatchDataChangeEvent(tableId,
                                 new LogMinerChangeRecordEmitter(offsetContext, dmlEntry, table, clock));
                     });
