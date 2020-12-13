@@ -24,13 +24,13 @@ import io.debezium.metrics.Metrics;
 @ThreadSafe
 public class LogMinerMetrics extends Metrics implements LogMinerMetricsMXBean {
 
-    public final static int DEFAULT_BATCH_SIZE = 20_000;
+    public final static int DEFAULT_BATCH_SIZE = 100 ; // 20_000;
 
     private final static int MAX_SLEEP_TIME = 3_000;
     private final static int DEFAULT_SLEEP_TIME = 1_000;
     private final static int MIN_SLEEP_TIME = 0;
 
-    private final static int MIN_BATCH_SIZE = 1_000;
+    private final static int MIN_BATCH_SIZE = 1;   //  1_000;
     private final static int MAX_BATCH_SIZE = 100_000;
     private final static int DEFAULT_HOURS_TO_KEEP_TRANSACTION = 4;
 

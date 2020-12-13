@@ -174,7 +174,7 @@ public class LogMinerStreamingChangeEventSource implements StreamingChangeEventS
 
                             // so kha lon co the chay vai ngay chua loop cho nay lai 20_000;
                             endScn = getEndScn(connection, startScn, logMinerMetrics);
-                            // LOGGER.info("tuonghv endScn "+ endScn);
+                             LOGGER.info("tuonghv endScn "+ endScn);
                             flushLogWriter(connection, jdbcConfiguration, isRac, racHosts);
 
                             pauseBetweenMiningSessions();
@@ -199,12 +199,12 @@ public class LogMinerStreamingChangeEventSource implements StreamingChangeEventS
                                 currentRedoLogFiles = getCurrentRedoLogFiles(connection, logMinerMetrics);
                             }
 
-                            // LOGGER.info("tuonghv startLogMining startScn:"+ startScn+ "endScn:" + endScn + "strategy:" + strategy + "isContinuousMining:"+ isContinuousMining);
+                             LOGGER.info("tuonghv startLogMining startScn:"+ startScn+ "endScn:" + endScn + "strategy:" + strategy + "isContinuousMining:"+ isContinuousMining);
                             
 
                             /////////////////////// BAT DAU JOB
                             // kich hoat mining sys.dbms_logmnr.start_logmnr
-                            // LOGGER.info("tuonghv startLogMining startScn:" + startScn + " endScn" + endScn);  
+                             LOGGER.info("tuonghv startLogMining startScn: " + startScn + " endScn: " + endScn);  
                             startLogMining(connection, startScn, endScn, strategy, isContinuousMining);
                             // LOGGER.info("tuonghv end startLogMining startScn");    
                             stopwatch.start();
@@ -212,16 +212,16 @@ public class LogMinerStreamingChangeEventSource implements StreamingChangeEventS
                             // LOGGER.info("tuonghv LOG_MINING_VIEW_FETCH_SIZE: "+ LOG_MINING_VIEW_FETCH_SIZE); 
                             // miningView.setFetchSize(LOG_MINING_VIEW_FETCH_SIZE);
 
-                            // LOGGER.info("tuonghv Query log");   
+                             LOGGER.info("tuonghv Query log");   
                             miningView.setFetchSize(1);
                             miningView.setLong(1, startScn);
                             miningView.setLong(2, endScn);
 
                             // LOGGER.info("tuonghv start executeQuery minning:");
-                            // LOGGER.info("tuonghv miningView startScn:" + startScn + " endScn" + d);   
+                            LOGGER.info("tuonghv miningView startScn:" + startScn + " endScn: " + endScn);   
                             try (ResultSet rs = miningView.executeQuery()) {
                                 // co du lieu mining tu view V$LOGMNR_CONTENTS
-                                // LOGGER.info("tuonghv executeQuery minning:"); 
+                                LOGGER.info("tuonghv executeQuery minning:"); 
 
                                 Duration lastDurationOfBatchCapturing = stopwatch.stop().durations().statistics().getTotal();
                                 logMinerMetrics.setLastDurationOfBatchCapturing(lastDurationOfBatchCapturing);

@@ -183,7 +183,7 @@ public class LogMinerHelper {
             if (!topMiningScnInFarFuture) {
                 metrics.changeSleepingTime(true);
             }
-            return currentScn;
+            return topScnToMine;   // dung nghia conntinue mining
         }
         else {
             metrics.changeSleepingTime(false);
@@ -248,6 +248,7 @@ public class LogMinerHelper {
                                OracleConnectorConfig.LogMiningStrategy strategy, boolean isContinuousMining)
             throws SQLException {
         String statement = SqlUtils.startLogMinerStatement(startScn, endScn, strategy, isContinuousMining);
+        LOGGER.info("Tuonghv mining: {}", statement);
         executeCallableStatement(connection, statement);
         // todo dbms_logmnr.STRING_LITERALS_IN_STMT?
         // todo If the log file is corrupted/bad, logmnr will not be able to access it, we have to switch to another one?

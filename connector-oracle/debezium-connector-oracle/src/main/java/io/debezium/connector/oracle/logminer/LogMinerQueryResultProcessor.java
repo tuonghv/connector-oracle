@@ -82,10 +82,10 @@ class LogMinerQueryResultProcessor {
         Instant startTime = Instant.now();
         while (true) {
 
-            // LOGGER.info("tuonghv processResult"); 
+             LOGGER.info("tuonghv processResult"); 
             try {
                 if (!resultSet.next()) {
-                    // LOGGER.info("break"); 
+                     LOGGER.info("break"); 
                     break;
                 }
             }
@@ -128,9 +128,13 @@ class LogMinerQueryResultProcessor {
                 return 0;
             }
 
+            LOGGER.info("tuonghv operationCode: " + operationCode); 
+
             // Commit
-            LOGGER.info("tuonghv RowMapper.COMMIT "); 
             if (operationCode == RowMapper.COMMIT) {
+                LOGGER.info("tuonghv RowMapper.COMMIT "); 
+                // neu bat commit thi moi thay doi database deu co su kien
+                // nen tat
                 if (transactionalBuffer.isTransactionRegistered(txId)) {
                     historyRecorder.record(scn, tableName, segOwner, operationCode, changeTime, txId, 0, redoSql);
                 }
@@ -143,6 +147,7 @@ class LogMinerQueryResultProcessor {
 
             // Rollback
             if (operationCode == RowMapper.ROLLBACK) {
+                LOGGER.info("tuonghv RowMapper.ROLLBACK "); 
                 if (transactionalBuffer.isTransactionRegistered(txId)) {
                     historyRecorder.record(scn, tableName, segOwner, operationCode, changeTime, txId, 0, redoSql);
                 }
@@ -155,6 +160,7 @@ class LogMinerQueryResultProcessor {
 
             // DDL
             if (operationCode == RowMapper.DDL) {
+                LOGGER.info("tuonghv RowMapper.DDL "); 
                 // todo: DDL operations are not yet supported during streaming while using Log Miner.
                 historyRecorder.record(scn, tableName, segOwner, operationCode, changeTime, txId, 0, redoSql);
                 LOGGER.info("DDL: {}, REDO_SQL: {}", logMessage, redoSql);
@@ -163,15 +169,17 @@ class LogMinerQueryResultProcessor {
 
             // MISSING_SCN
             if (operationCode == RowMapper.MISSING_SCN) {
+                LOGGER.info("tuonghv RowMapper.MISSING_SCN "); 
                 historyRecorder.record(scn, tableName, segOwner, operationCode, changeTime, txId, 0, redoSql);
                 LogMinerHelper.logWarn(transactionalBufferMetrics, "Missing SCN,  {}", logMessage);
                 continue;
             }
 
             // DML
-             LOGGER.info("tuonghv DML  INSERT"); 
+            
             if (operationCode == RowMapper.INSERT || operationCode == RowMapper.DELETE || operationCode == RowMapper.UPDATE) {
                 LOGGER.trace("DML,  {}, sql {}", logMessage, redoSql);
+                 LOGGER.info("tuonghv DML  INSERT"); 
                 LOGGER.info("tuonghv DML "+ redoSql + "\n redoSql" + redoSql); 
                 dmlCounter++;
                 LogMinerDmlEntry dmlEntry = dmlParser.parse(redoSql, schema.getTables(), txId);
@@ -198,9 +206,12 @@ class LogMinerQueryResultProcessor {
                 dmlEntry.setScn(scn);
 
                 try {
+                    LOGGER.info("tuonghv  getTableId"); 
                     TableId tableId = RowMapper.getTableId(catalogName, resultSet);
+                    LOGGER.info("tuonghv  registerCommitCallback"); 
                     transactionalBuffer.registerCommitCallback(txId, scn, changeTime.toInstant(), (timestamp, smallestScn, commitScn, counter) -> {
                         // update SCN in offset context only if processed SCN less than SCN among other transactions
+                        LOGGER.info("tuonghv  registerCommitCallback init"); 
                         if (smallestScn == null || scn.compareTo(smallestScn) < 0) {
                             offsetContext.setScn(scn.longValue());
                             transactionalBufferMetrics.setOldestScn(scn.longValue());
@@ -221,13 +232,30 @@ class LogMinerQueryResultProcessor {
 
                 }
                 catch (Exception e) {
+                    LOGGER.info("tuonghv  transactionalBufferMetrics error"); 
                     LogMinerHelper.logError(transactionalBufferMetrics, "Following dmlEntry: {} cannot be dispatched due to the : {}", dmlEntry, e);
                 }
+                // tu commit
+                LOGGER.info("tuonghv check recorder"); 
+                if (transactionalBuffer.isTransactionRegistered(txId)) {
+                    // 
+                    LOGGER.info("tuonghv  tu dong record commit "); 
+                    historyRecorder.record(scn, tableName, segOwner, operationCode, changeTime, txId, 0, redoSql);
+                }
+                if (transactionalBuffer.commit(txId, scn, offsetContext, changeTime, context, logMessage)) {
+                     LOGGER.info("tuonghv  tu dong record commit "); 
+                    LOGGER.trace("COMMIT, {}", logMessage);
+                    commitCounter++;
+                }
+                historyRecorder.flush();
+
+
             }
         }
 
         if (dmlCounter > 0 || commitCounter > 0 || rollbackCounter > 0) {
 
+            LOGGER.info("tuonghv  check dmlCounter"); 
             Duration totalTime = Duration.between(startTime, Instant.now());
             metrics.setLastCapturedDmlCount(dmlCounter);
             metrics.setLastDurationOfBatchProcessing(totalTime);
@@ -237,6 +265,7 @@ class LogMinerQueryResultProcessor {
             if (offsetContext.getCommitScn() != null) {
                 currentOffsetCommitScn = offsetContext.getCommitScn();
             }
+            LOGGER.info("tuonghv  log"); 
             LOGGER.debug("{} DMLs, {} Commits, {} Rollbacks. Processed in {} millis. " +
                     "Lag:{}. Offset scn:{}. Offset commit scn:{}. Active transactions:{}. Sleep time:{}",
                     dmlCounter, commitCounter, rollbackCounter, totalTime.toMillis(),
@@ -244,6 +273,7 @@ class LogMinerQueryResultProcessor {
                     transactionalBufferMetrics.getNumberOfActiveTransactions(), metrics.getMillisecondToSleepBetweenMiningQuery());
         }
 
+        LOGGER.info("tuonghv  historyRecorder.flush"); 
         historyRecorder.flush();
         return dmlCounter;
     }

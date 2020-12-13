@@ -10,5 +10,6 @@ cd /home/debezium/debezium-incubator-master_moinhat/debezium-incubator-master/de
 mvn clean package
 
 
+yes | cp -rf /home/debezium/debezium-incubator-master_moinhat/debezium-incubator-master/debezium-connector-oracle/target/debezium-connector-oracle-1.0.68.jar /home/debezium/connector/debezium-connector-oracle-1.0.68.jar
 
 COPY debezium-connector-oracle-1.0.68.jar /kafka/connect/debezium-connector-oracle/
